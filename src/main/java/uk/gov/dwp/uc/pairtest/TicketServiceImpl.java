@@ -71,6 +71,9 @@ public class TicketServiceImpl  implements TicketService {
                 throw new InvalidPurchaseException("Child or Infant tickets cannot be purchased without an Adult ticket.");
             }
         }
-    
+    private void makePaymentAndReserveSeats(Long accountId, TicketSummary summary) {
+        ticketPaymentService.makePayment(accountId, summary.getTotalAmountToPay());
+        seatReservationService.reserveSeat(accountId, summary.getAdultTickets() + summary.getChildTickets());
+    }
     
 }

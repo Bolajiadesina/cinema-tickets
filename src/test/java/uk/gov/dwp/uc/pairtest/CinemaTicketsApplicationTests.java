@@ -3,8 +3,11 @@ package uk.gov.dwp.uc.pairtest;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+import java.util.concurrent.ExecutorService;
+
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Spy;
 
 import thirdparty.paymentgateway.TicketPaymentService;
 import thirdparty.seatbooking.SeatReservationService;
@@ -15,16 +18,19 @@ import static org.junit.jupiter.api.Assertions.*;
 public class CinemaTicketsApplicationTests {
 
 	
+	
 
 	private TicketPaymentService ticketPaymentService;
     private SeatReservationService seatReservationService;
+	private ExecutorService executorService;
     private TicketServiceImpl ticketService;
 
     @Before
     public void setup() {
         ticketPaymentService = mock(TicketPaymentService.class);
         seatReservationService = mock(SeatReservationService.class);
-        ticketService = new TicketServiceImpl(ticketPaymentService, seatReservationService);
+		executorService= mock(ExecutorService.class);
+        ticketService = new TicketServiceImpl(ticketPaymentService, seatReservationService,executorService);
     }
 
     @Test
@@ -90,6 +96,7 @@ public class CinemaTicketsApplicationTests {
     }
 
     @Test
+	
     public void shouldProcessValidMaximumTicketPurchase() {
         TicketTypeRequest adultTicket = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 25);
 

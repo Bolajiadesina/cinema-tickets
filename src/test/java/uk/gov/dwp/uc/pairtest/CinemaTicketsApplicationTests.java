@@ -1,13 +1,16 @@
 package uk.gov.dwp.uc.pairtest;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.concurrent.ExecutorService;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Spy;
 
 import thirdparty.paymentgateway.TicketPaymentService;
 import thirdparty.seatbooking.SeatReservationService;
@@ -17,32 +20,36 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class CinemaTicketsApplicationTests {
 
-	
-	
-
-	private TicketPaymentService ticketPaymentService;
+    private TicketPaymentService ticketPaymentService;
     private SeatReservationService seatReservationService;
-	private ExecutorService executorService;
+    private ExecutorService executorService;
     private TicketServiceImpl ticketService;
 
     @Before
     public void setup() {
         ticketPaymentService = mock(TicketPaymentService.class);
         seatReservationService = mock(SeatReservationService.class);
-		executorService= mock(ExecutorService.class);
-        ticketService = new TicketServiceImpl(ticketPaymentService, seatReservationService,executorService);
+        executorService = mock(ExecutorService.class);
+        ticketService = new TicketServiceImpl(ticketPaymentService, seatReservationService, executorService);
     }
 
+    
+
     @Test
-    public void testValidTicketPurchase() {
+    public void testValidTicketPurchase_Multithreaded() throws Exception {
         TicketTypeRequest adultRequest = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 2);
         TicketTypeRequest childRequest = new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 1);
-        TicketTypeRequest infantRequest = new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 1);
 
-        ticketService.purchaseTickets(1L, adultRequest, childRequest, infantRequest);
+        when(executorService.submit(any(Runnable.class))).then(invocation -> {
+            Runnable task = invocation.getArgument(0);
+            task.run(); // Run the task immediately for test purposes
+            return null;
+        });
 
-        verify(ticketPaymentService).makePayment(1L, 65);  // 2 adults * £25 + 1 child * £15 = £65
-        verify(seatReservationService).reserveSeat(1L, 3);  // 2 adults + 1 child = 3 seats
+        ticketService.purchaseTickets(1L, adultRequest, childRequest);
+
+        verify(ticketPaymentService).makePayment(1L, 65); // 2 adults * £25 + 1 child * £15 = £65
+        verify(seatReservationService).reserveSeat(1L, 3); // 2 adults + 1 child = 3 seats
     }
 
     @Test(expected = InvalidPurchaseException.class)
@@ -56,10 +63,16 @@ public class CinemaTicketsApplicationTests {
         TicketTypeRequest adultTicket = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 2);
         TicketTypeRequest childTicket = new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 3);
 
+        when(executorService.submit(any(Runnable.class))).then(invocation -> {
+            Runnable task = invocation.getArgument(0);
+            task.run(); // Run the task immediately for test purposes
+            return null;
+        });
+
         ticketService.purchaseTickets(1L, adultTicket, childTicket);
 
-        verify(ticketPaymentService).makePayment(1L, 95);  // 2 * 25 + 3 * 15 = 95
-        verify(seatReservationService).reserveSeat(1L, 5);  // 5 seats to reserve
+        verify(ticketPaymentService).makePayment(1L, 95); // 2 * 25 + 3 * 15 = 95
+        verify(seatReservationService).reserveSeat(1L, 5); // 5 seats to reserve
     }
 
     @Test
@@ -68,10 +81,16 @@ public class CinemaTicketsApplicationTests {
         TicketTypeRequest childTicket = new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 1);
         TicketTypeRequest infantTicket = new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 1);
 
+        when(executorService.submit(any(Runnable.class))).then(invocation -> {
+            Runnable task = invocation.getArgument(0);
+            task.run(); // Run the task immediately for test purposes
+            return null;
+        });
+
         ticketService.purchaseTickets(1L, adultTicket, childTicket, infantTicket);
 
-        verify(ticketPaymentService).makePayment(1L, 40);  // 1 * 25 + 1 * 15 = 40
-        verify(seatReservationService).reserveSeat(1L, 2);  // 2 seats (1 adult, 1 child)
+        verify(ticketPaymentService).makePayment(1L, 40); // 1 * 25 + 1 * 15 = 40
+        verify(seatReservationService).reserveSeat(1L, 2); // 2 seats (1 adult, 1 child)
     }
 
     @Test
@@ -96,14 +115,20 @@ public class CinemaTicketsApplicationTests {
     }
 
     @Test
-	
+
     public void shouldProcessValidMaximumTicketPurchase() {
         TicketTypeRequest adultTicket = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 25);
 
+        when(executorService.submit(any(Runnable.class))).then(invocation -> {
+            Runnable task = invocation.getArgument(0);
+            task.run(); // Run the task immediately for test purposes
+            return null;
+        });
+
         ticketService.purchaseTickets(1L, adultTicket);
 
-        verify(ticketPaymentService).makePayment(1L, 625);  // 25 * 25 = 625
-        verify(seatReservationService).reserveSeat(1L, 25);  // 25 seats
+        verify(ticketPaymentService).makePayment(1L, 625); // 25 * 25 = 625
+        verify(seatReservationService).reserveSeat(1L, 25); // 25 seats
     }
 
     @Test

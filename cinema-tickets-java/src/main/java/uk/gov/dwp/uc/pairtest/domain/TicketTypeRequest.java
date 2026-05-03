@@ -1,13 +1,15 @@
 package uk.gov.dwp.uc.pairtest.domain;
 
+import jakarta.validation.constraints.NotNull;
+
 /**
  * Immutable Object
  */
-
 public class TicketTypeRequest {
-
-    private int noOfTickets;
-    private Type type;
+    @NotNull
+    private final int noOfTickets;
+    @NotNull
+    private final Type type;
 
     public TicketTypeRequest(Type type, int noOfTickets) {
         this.type = type;
@@ -23,7 +25,6 @@ public class TicketTypeRequest {
     }
 
     public enum Type {
-        ADULT, CHILD , INFANT
+        ADULT, CHILD, INFANT
     }
-
 }

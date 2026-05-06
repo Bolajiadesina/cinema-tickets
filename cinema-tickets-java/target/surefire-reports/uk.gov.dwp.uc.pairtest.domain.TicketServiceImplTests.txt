@@ -1,15 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: uk.gov.dwp.uc.pairtest.domain.TicketServiceImplTests
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.608 s <<< FAILURE! -- in uk.gov.dwp.uc.pairtest.domain.TicketServiceImplTests
-uk.gov.dwp.uc.pairtest.domain.TicketServiceImplTests.testValidTicketTypeRequest -- Time elapsed: 0.057 s <<< ERROR!
-java.lang.Error: 
-Unresolved compilation problems: 
-	RETURNS_MOCKS cannot be resolved to a variable
-	RETURNS_MOCKS cannot be resolved to a variable
-
-	at uk.gov.dwp.uc.pairtest.domain.TicketServiceImplTests.setUp(TicketServiceImplTests.java:31)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1597)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1597)
-
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.191 s -- in uk.gov.dwp.uc.pairtest.domain.TicketServiceImplTests

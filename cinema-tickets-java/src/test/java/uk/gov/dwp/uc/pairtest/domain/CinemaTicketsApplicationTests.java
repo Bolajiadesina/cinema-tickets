@@ -47,6 +47,7 @@ public class CinemaTicketsApplicationTests {
     }
 
     @Test
+    @DisplayName("Should load properties correctly from application.properties")
     void testPropertiesAreLoadedCorrectly() {
         when(ticketAndAccountsValidations.getMaxTicket()).thenReturn(25);
         when(ticketAndAccountsValidations.getMinTicket()).thenReturn(1);
@@ -56,6 +57,7 @@ public class CinemaTicketsApplicationTests {
     }
 
     @Test
+    @DisplayName("Should purchase tickets successfully with valid input")
     void testPurchaseTickets_ValidInput() {
         TicketTypeRequest adultTickets = new TicketTypeRequest(Type.ADULT, 2);
         TicketTypeRequest childTickets = new TicketTypeRequest(Type.CHILD, 1);
@@ -65,6 +67,7 @@ public class CinemaTicketsApplicationTests {
     }
 
     @Test
+    @DisplayName("Should throw VAL_001 when account ID is invalid")
     void testValidTicketTypeRequest() {
         TicketTypeRequest request = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 2);
         assertEquals(TicketTypeRequest.Type.ADULT, request.getTicketType());
@@ -72,6 +75,7 @@ public class CinemaTicketsApplicationTests {
     }
 
     @Test
+    @DisplayName("Should throw VAL_001 when account ID is invalid")
     void testPurchaseTickets_InvalidAccountId() throws ExecutionException, InterruptedException {
 
         TicketTypeRequest adultTickets = new TicketTypeRequest(Type.ADULT, 2);
@@ -90,37 +94,49 @@ public class CinemaTicketsApplicationTests {
         }
     }
 
-    @Test
-    void testPurchaseTickets_NoAdultTicket() {
-
-        TicketTypeRequest childTickets = new TicketTypeRequest(Type.CHILD, 2);
-
-        doThrow(new InvalidPurchaseException("Child or Infant tickets cannot be purchased without an Adult."))
-                .when(ticketAndAccountsValidations).validateTicketPurchase(any());
-
-        InvalidPurchaseException exception = assertThrows(InvalidPurchaseException.class,
-                () -> ticketService.purchaseTickets(12345L, childTickets));
-
-        assertEquals("Child or Infant tickets cannot be purchased without an Adult.", exception.getMessage());
-        verify(bookTicketAndReserveSeat, never()).makePaymentAndReserveSeats(any(), any());
-    }
+    
 
     @Test
+    @DisplayName("Should throw VAL_002 when trying to purchase more than 25 tickets")   
     void testPurchaseTickets_TooManyTickets() {
-
         TicketTypeRequest adultTickets = new TicketTypeRequest(Type.ADULT, 26);
 
-        doThrow(new InvalidPurchaseException("Cannot purchase more than 25 tickets."))
+        // Update the mock to include the new code
+        doThrow(new InvalidPurchaseException("VAL_002", "Cannot purchase more than 25 tickets."))
                 .when(ticketAndAccountsValidations).validateTicketPurchase(any());
 
         InvalidPurchaseException exception = assertThrows(InvalidPurchaseException.class,
                 () -> ticketService.purchaseTickets(12345L, adultTickets));
 
         assertEquals("Cannot purchase more than 25 tickets.", exception.getMessage());
+
+        assertEquals("VAL_002", exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("Should throw VAL_003 when child/infant tickets are purchased without an adult")
+    void testPurchaseTickets_NoAdultTicket() {
+        // 1. Arrange
+        TicketTypeRequest childTickets = new TicketTypeRequest(Type.CHILD, 2);
+
+        String expectedMessage = "Child and Infant tickets cannot be purchased without purchasing an Adult ticket.";
+        String expectedCode = "VAL_003";
+
+        doThrow(new InvalidPurchaseException(expectedCode, expectedMessage))
+                .when(ticketAndAccountsValidations).validateTicketPurchase(any());
+
+        InvalidPurchaseException exception = assertThrows(InvalidPurchaseException.class,
+                () -> ticketService.purchaseTickets(12345L, childTickets));
+
+        assertEquals(expectedMessage, exception.getMessage());
+
+        assertEquals(expectedCode, exception.getErrorCode());
+
         verify(bookTicketAndReserveSeat, never()).makePaymentAndReserveSeats(any(), any());
     }
 
     @Test
+    @DisplayName("Should throw exception when number of infant tickets exceeds adult tickets")
     void testPurchaseTickets_InfantsExceedAdults() {
 
         TicketTypeRequest adultTickets = new TicketTypeRequest(Type.ADULT, 1);

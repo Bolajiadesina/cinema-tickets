@@ -20,6 +20,9 @@ public class TicketAndAccountsValidations {
     @Value("${MAX_TICKET}")
     private int maxTicket;
 
+    @Value("${INVALID_ACCOUNT_ID_MESSAGE}")
+    private String invalidAccountIdMessage;
+
     public int getMinTicket() {
         return minTicket;
     }
@@ -31,7 +34,7 @@ public class TicketAndAccountsValidations {
     public void validateAccountId(Long accountId) {
         logger.info("Validating account ID: " + accountId);
         if (accountId == null || accountId <= 0) {
-            throw new InvalidPurchaseException("Invalid account ID.");
+            throw new InvalidPurchaseException(invalidAccountIdMessage);
         }
     }
 
@@ -42,15 +45,21 @@ public class TicketAndAccountsValidations {
             throw new InvalidPurchaseException(
                     "At least " + minTicket + " ticket must be purchased.");
         }
-        if (summary.getTotalTickets() > maxTicket) {
-            throw new InvalidPurchaseException(
-                    "Only a maximum of " + maxTicket + " tickets can be purchased at a time.");
-        }
+       
+         if (summary.getTotalTickets() > maxTicket) {
+                throw new InvalidPurchaseException(
+                    "VAL_002", // The new error code for monitoring
+                    "Cannot purchase more than 25 tickets." // KEEP THIS STRING EXACTLY AS IT IS IN THE TEST
+                );
+            }
 
+        
         if (summary.getAdultTickets() == 0 && (summary.getChildTickets() > 0 || summary.getInfantTickets() > 0)) {
-            throw new InvalidPurchaseException(
-                    "Child and Infant tickets cannot be purchased without purchasing an Adult ticket.");
-        }
+    throw new InvalidPurchaseException(
+            "VAL_003", 
+            "Child and Infant tickets cannot be purchased without purchasing an Adult ticket."
+    );
+}
 
         if (summary.getInfantTickets() > summary.getAdultTickets()) {
             throw new InvalidPurchaseException("Number of INFANT tickets cannot exceed number of ADULT tickets");

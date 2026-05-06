@@ -18,7 +18,7 @@ public class TicketProcessorTests {
      @BeforeEach
      void setup() throws Exception {
         ticketProcessor = new TicketProcessor();
-        // Set ticket prices using reflection since @Value doesn't work in tests
+       
         java.lang.reflect.Field childPriceField = TicketProcessor.class.getDeclaredField("childTicketPrice");
         childPriceField.setAccessible(true);
         childPriceField.setInt(ticketProcessor, 15);
@@ -30,18 +30,17 @@ public class TicketProcessorTests {
     
 
     @Test
+    @DisplayName("Should process tickets and calculate correct cost and seats")
      void testProcessTickets_CalculatesCorrectCostAndSeats() {
-        // GIVEN: A set of ticket requests for 2 Adults, 1 Child, and 1 Infant.
+   
         TicketTypeRequest adult = new TicketTypeRequest(Type.ADULT, 2);
         TicketTypeRequest child = new TicketTypeRequest(Type.CHILD, 1);
         TicketTypeRequest infant = new TicketTypeRequest(Type.INFANT, 1);
 
-        // WHEN: The TicketProcessor processes the requests.
+     
         TicketSummary summary = ticketProcessor.processTickets(adult, child, infant);
 
-        // THEN: Verify the cost and seat count are correct based on the rules
-        // (2 Adult * $25) + (1 Child * $15) = $65
-        // (2 Adult seats) + (1 Child seat) = 3 total seats
+       
         assertEquals(4, summary.getTotalTickets());
         assertEquals(3, summary.getTotalSeats()); 
         assertEquals(65, summary.getTotalPrice());
@@ -51,14 +50,15 @@ public class TicketProcessorTests {
     }
 
     @Test
+    @DisplayName("Should process only adult tickets correctly")
      void testProcessTickets_OnlyAdults() {
-        // GIVEN: A request for only 3 Adult tickets.
+       
         TicketTypeRequest adult = new TicketTypeRequest(Type.ADULT, 3);
 
-        // WHEN: The TicketProcessor processes the request.
+      
         TicketSummary summary = ticketProcessor.processTickets(adult);
 
-        // THEN: Verify the cost and seat count are correct.
+        
         assertEquals(3, summary.getTotalTickets());
         assertEquals(3, summary.getTotalSeats());
         assertEquals(75, summary.getTotalPrice()); // 3 Adults * $25 = $75
@@ -68,14 +68,15 @@ public class TicketProcessorTests {
     }
 
     @Test
+    @DisplayName("Should process only infant tickets correctly")
      void testProcessTickets_OnlyInfants() {
-       // GIVEN: A request for only 2 Infant tickets.
+      
         TicketTypeRequest infant = new TicketTypeRequest(Type.INFANT, 2);
 
-        // WHEN: The TicketProcessor processes the request.
+       
         TicketSummary summary = ticketProcessor.processTickets(infant);
 
-        // THEN: Verify the cost and seat count are correct.
+        
         assertEquals(2, summary.getTotalTickets());
         assertEquals(0, summary.getTotalSeats()); // Infants do not get seats.
         assertEquals(0, summary.getTotalPrice());

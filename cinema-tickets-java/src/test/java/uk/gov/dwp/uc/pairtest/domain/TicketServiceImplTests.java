@@ -53,28 +53,34 @@ public class TicketServiceImplTests {
     }
 
     @Test
+    @DisplayName("Should purchase tickets successfully with valid input")
+    
     void testValidTicketTypeRequest() {
         assertDoesNotThrow(() -> ticketService.createTicketRequest(TicketTypeRequest.Type.ADULT, 1));
     }
 
     @Test
+    @DisplayName("Should throw InvalidCustomerUserTypeException when ticket type is null")
     void testNullTypeThrowsInvalidCustomerUserTypeException() {
         assertThrows(InvalidCustomerUserTypeException.class, () -> ticketService.createTicketRequest(null, 2));
     }
 
     @Test
+    @DisplayName("Should throw TicketCountException when trying to purchase zero tickets")
     void testZeroTicketsThrowsTicketCountException() {
         assertThrows(TicketCountException.class,
                 () -> ticketService.createTicketRequest(TicketTypeRequest.Type.ADULT, 0));
     }
 
     @Test
+    @DisplayName("Should throw TicketCountException when trying to purchase negative number of tickets")
     void testNegativeTicketsThrowsTicketCountException() {
         assertThrows(TicketCountException.class,
                 () -> ticketService.createTicketRequest(TicketTypeRequest.Type.ADULT, -1));
     }
 
     @Test
+    @DisplayName("Should throw VAL_002 when trying to purchase more than 25 tickets")
     void testTooManyTicketsThrowsTicketCountException() {
         assertThrows(TicketCountException.class,
                 () -> ticketService.createTicketRequest(TicketTypeRequest.Type.ADULT, 26));

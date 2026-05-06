@@ -1,38 +1,36 @@
-package uk.gov.dwp.uc.pairtest;
+package uk.gov.dwp.uc.pairtest.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.test.context.TestPropertySource;
 
-import uk.gov.dwp.uc.pairtest.domain.TicketSummary;
-import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest;
+
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest.Type;
 import uk.gov.dwp.uc.pairtest.services.TicketProcessor;
 
-@SpringBootTest
-@TestPropertySource(locations = "classpath:application-test.properties")
+
+@DisplayName("Ticket process engine Test")
 public class TicketProcessorTests {
 
-    @Autowired
+    
     private TicketProcessor ticketProcessor;
-     @TestConfiguration
-    static class TestConfig {
-        @Bean
-        public ExecutorService executorService() {
-            return Executors.newSingleThreadExecutor();
-        }
-    }
+     @BeforeEach
+     void setup() throws Exception {
+        ticketProcessor = new TicketProcessor();
+        // Set ticket prices using reflection since @Value doesn't work in tests
+        java.lang.reflect.Field childPriceField = TicketProcessor.class.getDeclaredField("childTicketPrice");
+        childPriceField.setAccessible(true);
+        childPriceField.setInt(ticketProcessor, 15);
+        
+        java.lang.reflect.Field adultPriceField = TicketProcessor.class.getDeclaredField("adultTicketPrice");
+        adultPriceField.setAccessible(true);
+        adultPriceField.setInt(ticketProcessor, 25);
+    }  
+    
 
     @Test
-    public void testProcessTickets_CalculatesCorrectCostAndSeats() {
+     void testProcessTickets_CalculatesCorrectCostAndSeats() {
         // GIVEN: A set of ticket requests for 2 Adults, 1 Child, and 1 Infant.
         TicketTypeRequest adult = new TicketTypeRequest(Type.ADULT, 2);
         TicketTypeRequest child = new TicketTypeRequest(Type.CHILD, 1);
@@ -45,7 +43,7 @@ public class TicketProcessorTests {
         // (2 Adult * $25) + (1 Child * $15) = $65
         // (2 Adult seats) + (1 Child seat) = 3 total seats
         assertEquals(4, summary.getTotalTickets());
-        assertEquals(3, summary.getTotalSeats()); // Infants do not get a seat.
+        assertEquals(3, summary.getTotalSeats()); 
         assertEquals(65, summary.getTotalPrice());
         assertEquals(2, summary.getAdultTickets());
         assertEquals(1, summary.getChildTickets());
@@ -53,7 +51,7 @@ public class TicketProcessorTests {
     }
 
     @Test
-    public void testProcessTickets_OnlyAdults() {
+     void testProcessTickets_OnlyAdults() {
         // GIVEN: A request for only 3 Adult tickets.
         TicketTypeRequest adult = new TicketTypeRequest(Type.ADULT, 3);
 
@@ -70,7 +68,7 @@ public class TicketProcessorTests {
     }
 
     @Test
-    public void testProcessTickets_OnlyInfants() {
+     void testProcessTickets_OnlyInfants() {
        // GIVEN: A request for only 2 Infant tickets.
         TicketTypeRequest infant = new TicketTypeRequest(Type.INFANT, 2);
 

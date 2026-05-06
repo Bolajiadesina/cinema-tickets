@@ -1,13 +1,13 @@
-package uk.gov.dwp.uc.pairtest;
+package uk.gov.dwp.uc.pairtest.domain;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Bean;
-import org.springframework.test.context.TestPropertySource;
-import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest.Type;
 import uk.gov.dwp.uc.pairtest.exception.InvalidPurchaseException;
 import uk.gov.dwp.uc.pairtest.services.BookTicketAndReserveSeat;
@@ -16,10 +16,6 @@ import uk.gov.dwp.uc.pairtest.services.TicketServiceImpl;
 import uk.gov.dwp.uc.pairtest.utils.TicketAndAccountsValidations;
 
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -27,32 +23,27 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
 
-@SpringBootTest
-@TestPropertySource(locations = "classpath:application-test.properties")
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+
+@DisplayName("Ticket Service validation Tests")
 public class CinemaTicketsApplicationTests {
 
-    @MockBean
     private TicketProcessor ticketProcessor;
 
-    @MockBean
+    @Mock
     private BookTicketAndReserveSeat bookTicketAndReserveSeat;
 
-    @MockBean
+    @Mock
     private TicketAndAccountsValidations ticketAndAccountsValidations;
 
-    @Autowired
     private TicketServiceImpl ticketService;
 
-    @Autowired
-    private ExecutorService executorService;
-
-    @TestConfiguration
-    static class TestConfig {
-        @Bean
-        public ExecutorService executorService() {
-            // Use a single-threaded executor for predictable test execution
-            return Executors.newSingleThreadExecutor();
-        }
+    @BeforeEach
+    void setUp() {
+        this.ticketProcessor = new TicketProcessor();
+        this.ticketService = new TicketServiceImpl(ticketProcessor, bookTicketAndReserveSeat,
+                ticketAndAccountsValidations);
     }
 
     @Test
@@ -65,7 +56,7 @@ public class CinemaTicketsApplicationTests {
     }
 
     @Test
-    public void testPurchaseTickets_ValidInput() {
+    void testPurchaseTickets_ValidInput() {
         TicketTypeRequest adultTickets = new TicketTypeRequest(Type.ADULT, 2);
         TicketTypeRequest childTickets = new TicketTypeRequest(Type.CHILD, 1);
         TicketTypeRequest infantTickets = new TicketTypeRequest(Type.INFANT, 1);
@@ -81,7 +72,7 @@ public class CinemaTicketsApplicationTests {
     }
 
     @Test
-    public void testPurchaseTickets_InvalidAccountId() throws ExecutionException, InterruptedException {
+    void testPurchaseTickets_InvalidAccountId() throws ExecutionException, InterruptedException {
 
         TicketTypeRequest adultTickets = new TicketTypeRequest(Type.ADULT, 2);
 
@@ -100,33 +91,37 @@ public class CinemaTicketsApplicationTests {
     }
 
     @Test
-    public void testPurchaseTickets_NoAdultTicket() throws InterruptedException, ExecutionException {
+    void testPurchaseTickets_NoAdultTicket() {
 
         TicketTypeRequest childTickets = new TicketTypeRequest(Type.CHILD, 2);
 
         doThrow(new InvalidPurchaseException("Child or Infant tickets cannot be purchased without an Adult."))
                 .when(ticketAndAccountsValidations).validateTicketPurchase(any());
 
-        ticketService.purchaseTickets(12345L, childTickets);
+        InvalidPurchaseException exception = assertThrows(InvalidPurchaseException.class,
+                () -> ticketService.purchaseTickets(12345L, childTickets));
 
+        assertEquals("Child or Infant tickets cannot be purchased without an Adult.", exception.getMessage());
         verify(bookTicketAndReserveSeat, never()).makePaymentAndReserveSeats(any(), any());
     }
 
     @Test
-    public void testPurchaseTickets_TooManyTickets() {
+    void testPurchaseTickets_TooManyTickets() {
 
         TicketTypeRequest adultTickets = new TicketTypeRequest(Type.ADULT, 26);
 
         doThrow(new InvalidPurchaseException("Cannot purchase more than 25 tickets."))
                 .when(ticketAndAccountsValidations).validateTicketPurchase(any());
 
-        ticketService.purchaseTickets(12345L, adultTickets);
+        InvalidPurchaseException exception = assertThrows(InvalidPurchaseException.class,
+                () -> ticketService.purchaseTickets(12345L, adultTickets));
 
+        assertEquals("Cannot purchase more than 25 tickets.", exception.getMessage());
         verify(bookTicketAndReserveSeat, never()).makePaymentAndReserveSeats(any(), any());
     }
 
     @Test
-    public void testPurchaseTickets_InfantsExceedAdults() {
+    void testPurchaseTickets_InfantsExceedAdults() {
 
         TicketTypeRequest adultTickets = new TicketTypeRequest(Type.ADULT, 1);
         TicketTypeRequest infantTickets = new TicketTypeRequest(Type.INFANT, 2);
@@ -134,8 +129,10 @@ public class CinemaTicketsApplicationTests {
         doThrow(new InvalidPurchaseException("Number of INFANT tickets cannot exceed number of ADULT tickets"))
                 .when(ticketAndAccountsValidations).validateTicketPurchase(any());
 
-        ticketService.purchaseTickets(12345L, adultTickets, infantTickets);
+        InvalidPurchaseException exception = assertThrows(InvalidPurchaseException.class,
+                () -> ticketService.purchaseTickets(12345L, adultTickets, infantTickets));
 
+        assertEquals("Number of INFANT tickets cannot exceed number of ADULT tickets", exception.getMessage());
         verify(bookTicketAndReserveSeat, never()).makePaymentAndReserveSeats(any(), any());
     }
 

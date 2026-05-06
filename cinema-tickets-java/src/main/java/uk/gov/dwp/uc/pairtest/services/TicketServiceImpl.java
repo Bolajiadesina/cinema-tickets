@@ -28,27 +28,28 @@ public class TicketServiceImpl implements TicketService {
     @Value("${MAX_TICKET}")
     private int maxTicket;
 
+    @Value("${EMPTY_STRING}")
+    private String emptyString;
+
     private  final TicketProcessor ticketProcessor;
     private final BookTicketAndReserveSeat bookTicketAndReserveSeat;
     private final TicketAndAccountsValidations ticketAndAccountsValidations;
     private TicketSummary ticketSummary = null;
-    private final ExecutorService executorService;
+  
 
     public TicketServiceImpl(
             TicketProcessor ticketProcessor,
             BookTicketAndReserveSeat bookTicketAndReserveSeat,
-            TicketAndAccountsValidations ticketAndAccountsValidations,
-            ExecutorService executorService) {
+            TicketAndAccountsValidations ticketAndAccountsValidations) {
 
         this.ticketProcessor = ticketProcessor;
         this.bookTicketAndReserveSeat = bookTicketAndReserveSeat;
         this.ticketAndAccountsValidations = ticketAndAccountsValidations;
-        this.executorService = executorService;
     }
 
     public TicketTypeRequest createTicketRequest(TicketTypeRequest.Type type, int noOfTickets) {
         if (type == null) {
-            throw new InvalidCustomerUserTypeException("Type cannot be null");
+            throw new InvalidCustomerUserTypeException(emptyString);
         }
         if (noOfTickets < minTicket || noOfTickets > maxTicket) {
             throw new TicketCountException(
@@ -62,13 +63,12 @@ public class TicketServiceImpl implements TicketService {
     public void purchaseTickets(Long accountId, TicketTypeRequest... ticketTypeRequests)
             throws InvalidPurchaseException {
 
-        Future<?> reservationFuture = executorService.submit(() -> {
-        
+       
                 ticketAndAccountsValidations.validateAccountId(accountId);
                 ticketSummary = ticketProcessor.processTickets(ticketTypeRequests);
                 ticketAndAccountsValidations.validateTicketPurchase(ticketSummary);
                 bookTicketAndReserveSeat.makePaymentAndReserveSeats(accountId, ticketSummary);
            
-        });
+       
     }
 }
